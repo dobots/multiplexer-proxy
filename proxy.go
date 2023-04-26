@@ -85,6 +85,8 @@ func (a *SiteProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 //                a.proxyCache.Add(destinationUrl.String(),proxy,cache.DefaultExpiration)
 //	}
 //	proxy.(*httputil.ReverseProxy).ServeHTTP(rw, req)
+	//Reapply request.
+	req.Host = ""
 	proxy.ServeHTTP(rw, req)
 
 	//a.next.ServeHTTP(rw, req)
