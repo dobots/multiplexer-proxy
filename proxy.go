@@ -57,7 +57,6 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 		return nil, fmt.Errorf("target_replace cannot be empty")
 	}
 
-        log.Printf("Plugin multiplexer-proxy %s initialized: %s", name, config.TargetReplace)
 	return &SiteProxy{
 		config: config,
                 proxyCache: cache.New(5*time.Minute, 10*time.Minute),
@@ -72,16 +71,12 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 func (a *SiteProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	if req.Header.Get("X-Multiplexer-Proxy") == "true" {
-	      log.Printf("Plugin multiplexer-proxy: skipping second round")
               a.next.ServeHTTP(rw, req)
 	      return
         }
 	destTemplate := a.headerPattern.ReplaceAllString(a.config.TargetReplace,a.dotPattern.ReplaceAllString(url.QueryEscape(strings.Replace(req.Header.Get(a.config.Header),"@","-at-",-1)),"-"))
 	originalDest := req.Header.Get("X-Forwarded-Proto") + "://" + req.Host + req.URL.String()
-        log.Printf("Plugin multiplexer-proxy called: %s %s %s",originalDest, destTemplate, a.targetPattern.String())
 	destination := a.targetPattern.ReplaceAllString(originalDest, destTemplate)
-        log.Printf("Plugin multiplexer-proxy: %s",destination)
-
 	destinationUrl, err := url.Parse(destination)
 
 	if err != nil {
