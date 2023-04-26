@@ -8,7 +8,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"regexp"
-        "github.com/patrickmn/go-cache"
+        "go-cache/cache"
 	"time"
 )
 
