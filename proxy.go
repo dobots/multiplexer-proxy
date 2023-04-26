@@ -41,18 +41,21 @@ type SiteProxy struct {
 // New created a new SiteProxy plugin.
 func New(ctx context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
 	if len(config.Header) == 0 {
+	        log.Printf("Plugin multiplexer-proxy Header zero-length")
 		return nil, fmt.Errorf("header cannot be empty")
 	}
 
 	if len(config.TargetMatch) == 0 {
+	        log.Printf("Plugin multiplexer-proxy TargetMatch zero-length")
 		return nil, fmt.Errorf("target_match cannot be empty")
 	}
 
 	if len(config.TargetReplace) == 0 {
+	        log.Printf("Plugin multiplexer-proxy TargetReplace zero-length")
 		return nil, fmt.Errorf("target_replace cannot be empty")
 	}
 
-        log.Printf("Plugin multiplexer-proxy initialized: %s", config.Header)
+        log.Printf("Plugin multiplexer-proxy %s initialized: %s", name, config.TargetReplace)
 	return &SiteProxy{
 		config: config,
                 proxyCache: cache.New(5*time.Minute, 10*time.Minute),
