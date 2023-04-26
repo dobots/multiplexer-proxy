@@ -71,7 +71,7 @@ func (a *SiteProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
         log.Printf("Plugin multiplexer-proxy called: %s %s %s",a.pattern1.String(), a.pattern2.String(), a.config.TargetReplace)
 	destTemplate := a.pattern1.ReplaceAllString(a.config.TargetReplace,url.QueryEscape(req.Header.Get(a.config.Header)))
 
-	destination := a.pattern2.ReplaceAllString(req.URL.String(), destTemplate)
+	destination := a.pattern2.ReplaceAllString(req.Header.Get("X-Forwarded-Proto") + "://" + req.Host + req.URL.String(), destTemplate)
 	destinationUrl, err := url.Parse(destination)
 
         log.Printf("multiplexer-proxy: '%s' '%s', '%s' = '%s'",req.Host,req.URL.String(),req.URL.Host,req.URL.Scheme)
