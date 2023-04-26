@@ -73,12 +73,12 @@ func (a *SiteProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		a.next.ServeHTTP(rw, req)
 		return
 	}
-
 	proxy, found := a.proxyCache.Get(destinationUrl.String())
         if !found {
 		proxy = httputil.NewSingleHostReverseProxy(destinationUrl)
                 a.proxyCache.Add(destinationUrl.String(),proxy,cache.DefaultExpiration)
 	}
+	req.Host = "" //Need to reset the host, for the reverseProxy to work correctly:
 	proxy.(*httputil.ReverseProxy).ServeHTTP(rw, req)
 
 	a.next.ServeHTTP(rw, req)
