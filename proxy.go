@@ -74,7 +74,7 @@ func (a *SiteProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	destination := a.pattern2.ReplaceAllString(req.URL.String(), destTemplate)
 	destinationUrl, err := url.Parse(destination)
 
-        log.Printf("multiplexer-proxy: '%s' '%s', '%s' = '%s'",destTemplate,req.URL.String(),destination,destinationUrl.String())
+        log.Printf("multiplexer-proxy: '%s' '%s', '%s' = '%s'",req.Host,req.URL.String(),req.URL.Host,req.URL.Scheme)
 	if err != nil {
 		a.next.ServeHTTP(rw, req)
 		return
