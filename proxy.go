@@ -15,9 +15,9 @@ import (
 
 // Config the plugin configuration.
 type Config struct {
-	Header  string            `json:"header,omitempty"` // target header
-        TargetMatch string        `json:"target_match,omitempty"`
-        TargetReplace string      `json:"target_replace,omitempty"`
+	Header             string      `json:"header,omitempty" yaml:"Header"` // target header
+        TargetMatch        string      `json:"target_match,omitempty" yaml:"Target_match"`
+        TargetReplace      string      `json:"target_replace,omitempty" yaml:"Target_replace"`
 }
 
 // CreateConfig creates the default plugin configuration.
