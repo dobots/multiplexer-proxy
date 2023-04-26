@@ -32,8 +32,9 @@ func CreateConfig() *Config {
 type SiteProxy struct {
 	config *Config
         proxyCache  *cache.Cache
-        pattern1 *regexp.Regexp
-        pattern2 *regexp.Regexp
+        headerPattern *regexp.Regexp
+        targetPattern *regexp.Regexp
+        dotPattern *regexp.Regexp
 	next   http.Handler
 	name   string
 }
@@ -59,8 +60,9 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 	return &SiteProxy{
 		config: config,
                 proxyCache: cache.New(5*time.Minute, 10*time.Minute),
-		pattern1 : regexp.MustCompile(`\${header}`),
-        	pattern2 : regexp.MustCompile(config.TargetMatch),
+		headerPattern : regexp.MustCompile(`\${header}`),
+        	targetPattern : regexp.MustCompile(config.TargetMatch),
+                dotPattern : regexp.MustCompile(`\.`),
 		next:   next,
 		name:   name,
 	}, nil
@@ -73,10 +75,10 @@ func (a *SiteProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
               a.next.ServeHTTP(rw, req)
 	      return
         }
-	destTemplate := a.pattern1.ReplaceAllString(a.config.TargetReplace,url.QueryEscape(req.Header.Get(a.config.Header)))
+	destTemplate := a.headerPattern.ReplaceAllString(a.config.TargetReplace,a.dotPattern.ReplaceAllString(url.QueryEscape(req.Header.Get(a.config.Header)),"-"))
 	originalDest := req.Header.Get("X-Forwarded-Proto") + "://" + req.Host + req.URL.String()
-        log.Printf("Plugin multiplexer-proxy called: %s %s %s",originalDest, destTemplate, a.pattern2.String())
-	destination := a.pattern2.ReplaceAllString(originalDest, destTemplate)
+        log.Printf("Plugin multiplexer-proxy called: %s %s %s",originalDest, destTemplate, a.targetPattern.String())
+	destination := a.targetPattern.ReplaceAllString(originalDest, destTemplate)
         log.Printf("Plugin multiplexer-proxy: %s",destination)
 
 	destinationUrl, err := url.Parse(destination)
