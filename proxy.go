@@ -66,10 +66,11 @@ func (a *SiteProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
         log.Printf("Plugin multiplexer-proxy called")
 	destTemplate := a.pattern1.ReplaceAllString(a.config.TargetReplace,url.QueryEscape(req.Header.Get(a.config.Header)))
-	destination := a.pattern2.ReplaceAllString(req.URL.String(), destTemplate)
+        originalDestination := fmt.Sprintf("https://%s/%s",req.Host,req.URL.String())
+	destination := a.pattern2.ReplaceAllString(originalDestination, destTemplate)
 	destinationUrl, err := url.Parse(destination)
 
-        log.Printf("multiplexer-proxy: %s -> %s = %s",destTemplate,destination,destinationUrl.String())
+        log.Printf("multiplexer-proxy: '%s' , '%s' -> '%s' = '%s'",destTemplate,originalDestination,destination,destinationUrl.String())
 	if err != nil {
 		a.next.ServeHTTP(rw, req)
 		return
