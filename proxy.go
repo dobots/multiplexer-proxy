@@ -15,9 +15,9 @@ import (
 
 // Config the plugin configuration.
 type Config struct {
-	Header             string      `json:"header,omitempty" yaml:"Header"` // target header
-        TargetMatch        string      `json:"target_match,omitempty" yaml:"Target_match"`
-        TargetReplace      string      `json:"target_replace,omitempty" yaml:"Target_replace"`
+	Header             string      `json:"header,omitempty" yaml:"Header" mapstructure:"Header" default:"X-Forward-User"`
+        TargetMatch        string      `json:"target_match,omitempty" yaml:"Target_match" mapstructure:"Target_match" default:"^(.*)$"`
+        TargetReplace      string      `json:"target_replace,omitempty" yaml:"Target_replace" mapstructure:"Target_replace" default:"test.$1"`
 }
 
 // CreateConfig creates the default plugin configuration.
@@ -52,6 +52,7 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 		return nil, fmt.Errorf("target_replace cannot be empty")
 	}
 
+        log.Printf("Plugin multiplexer-proxy initialized: %s", config.Header)
 	return &SiteProxy{
 		config: config,
                 proxyCache: cache.New(5*time.Minute, 10*time.Minute),
