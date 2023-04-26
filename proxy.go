@@ -63,10 +63,12 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 
 func (a *SiteProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
+        fmt.Printf("Plugin multiplexer-proxy called")
 	destTemplate := a.pattern1.ReplaceAllString(a.config.TargetReplace,url.QueryEscape(req.Header.Get(a.config.Header)))
 	destination := a.pattern2.ReplaceAllString(req.URL.String(), destTemplate)
 	destinationUrl, err := url.Parse(destination)
 
+        fmt.Printf("multiplexer-proxy: %s -> %s = %s",destTemplate,destination,destinationUrl.String())
 	if err != nil {
 		a.next.ServeHTTP(rw, req)
 		return
