@@ -69,6 +69,7 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 func (a *SiteProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	if req.Header.Get("X-Multiplexer-Proxy") == "true" {
+	      log.Printf("Plugin multiplexer-proxy: skipping second round")
               a.next.ServeHTTP(rw, req)
 	      return
         }
@@ -76,7 +77,7 @@ func (a *SiteProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	originalDest := req.Header.Get("X-Forwarded-Proto") + "://" + req.Host + req.URL.String()
         log.Printf("Plugin multiplexer-proxy called: %s %s %s",originalDest, destTemplate, a.pattern2.String())
 	destination := a.pattern2.ReplaceAllString(originalDest, destTemplate)
-        log.Printf("Plugin multiplexer-proxy called: %s",destination)
+        log.Printf("Plugin multiplexer-proxy: %s",destination)
 
 	destinationUrl, err := url.Parse(destination)
 
