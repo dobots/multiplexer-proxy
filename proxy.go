@@ -68,26 +68,23 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 
 func (a *SiteProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
-        log.Printf("Plugin multiplexer-proxy called: %s %s %s",a.pattern1.String(), a.pattern2.String(), a.config.TargetReplace)
 	destTemplate := a.pattern1.ReplaceAllString(a.config.TargetReplace,url.QueryEscape(req.Header.Get(a.config.Header)))
+	originalDest := req.Header.Get("X-Forwarded-Proto") + "://" + req.Host + req.URL.String()
+        log.Printf("Plugin multiplexer-proxy called: %s %s %s",originalDest, destTemplate, pattern2)
+	destination := a.pattern2.ReplaceAllString(originalDest, destTemplate)
+        log.Printf("Plugin multiplexer-proxy called: %s",destination)
 
-	destination := a.pattern2.ReplaceAllString(req.Header.Get("X-Forwarded-Proto") + "://" + req.Host + req.URL.String(), destTemplate)
 	destinationUrl, err := url.Parse(destination)
 
-        log.Printf("multiplexer-proxy: '%s' '%s', '%s' = '%s'",req.Host,req.URL.String(),req.URL.Host,req.URL.Scheme)
 	if err != nil {
 		a.next.ServeHTTP(rw, req)
 		return
 	}
-//	proxy, found := a.proxyCache.Get(destinationUrl.String())
-//        if !found {
-		proxy := httputil.NewSingleHostReverseProxy(destinationUrl)
-//                a.proxyCache.Add(destinationUrl.String(),proxy,cache.DefaultExpiration)
-//	}
-//	proxy.(*httputil.ReverseProxy).ServeHTTP(rw, req)
-	//Reapply request.
+	proxy, found := a.proxyCache.Get(destinationUrl.String())
+        if !found {
+		proxy = httputil.NewSingleHostReverseProxy(destinationUrl)
+                a.proxyCache.Add(destinationUrl.String(),proxy,cache.DefaultExpiration)
+	}
 	req.Host = ""
-	proxy.ServeHTTP(rw, req)
-
-	//a.next.ServeHTTP(rw, req)
+	proxy.(*httputil.ReverseProxy).ServeHTTP(rw, req)
 }
