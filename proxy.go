@@ -8,7 +8,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"regexp"
-        "go-cache/cache"
+	"github.com/patrickmn/go-cache"
 	"time"
 )
 
@@ -24,15 +24,15 @@ func CreateConfig() *Config {
 	return &Config{
 		Header:  "",
 		TargetMatch: "^(.*)$",
-		TargetReplace: "${header}.$1"
+		TargetReplace: "${header}.$1",
 	}
 }
 
 type SiteProxy struct {
 	config *Config
-        proxyCache  *cache
-        pattern1 *Regexp
-        pattern2 *Regexp
+        proxyCache  *cache.Cache
+        pattern1 *regexp.Regexp
+        pattern2 *regexp.Regexp
 	next   http.Handler
 	name   string
 }
@@ -46,15 +46,16 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 	if len(config.TargetMatch) == 0 {
 		return nil, fmt.Errorf("target_match cannot be empty")
 	}
+
 	if len(config.TargetReplace) == 0 {
 		return nil, fmt.Errorf("target_replace cannot be empty")
 	}
 
 	return &SiteProxy{
 		config: config,
-                cache: cache.New(5*time.Minute, 10*time.Minute),
+                proxyCache: cache.New(5*time.Minute, 10*time.Minute),
 		pattern1 : regexp.MustCompile(`\${header}`),
-        	pattern2 : regexp.MustCompile(config.Target_match),
+        	pattern2 : regexp.MustCompile(config.TargetMatch),
 		next:   next,
 		name:   name,
 	}, nil
@@ -62,8 +63,8 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 
 func (a *SiteProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
-	destTemplate := a.pattern1.ReplaceAllString(a.config.Target_replace,url.QueryEscape(req.Header.Get(a.config.Header)))
-	destination := a.pattern2.ReplaceAllString(req.URL, destTemplate)
+	destTemplate := a.pattern1.ReplaceAllString(a.config.TargetReplace,url.QueryEscape(req.Header.Get(a.config.Header)))
+	destination := a.pattern2.ReplaceAllString(req.URL.String(), destTemplate)
 	destinationUrl, err := url.Parse(destination)
 
 	if err != nil {
@@ -71,12 +72,12 @@ func (a *SiteProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	proxy, found := a.cache.Get(destinationUrl)
+	proxy, found := a.proxyCache.Get(destinationUrl.String())
         if !found {
 		proxy = httputil.NewSingleHostReverseProxy(destinationUrl)
-                a.cache.Add(destinationUrl,proxy)
+                a.proxyCache.Add(destinationUrl.String(),proxy,cache.DefaultExpiration)
 	}
-	proxy.ServeHTTP(rw, req)
+	proxy.(*httputil.ReverseProxy).ServeHTTP(rw, req)
 
 	a.next.ServeHTTP(rw, req)
 }
