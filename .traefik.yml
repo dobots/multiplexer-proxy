@@ -1,0 +1,11 @@
+displayName: Header-based Multiplexing-Proxy
+type: middleware
+
+import: github.com/dobots/multiplexer-proxy
+
+summary: "Reverse proxy traffic based on a merge of a header's value and the original URL."
+
+testData:
+  Header: 'X-Forwarded-User'
+  Target_match: "^(.*)$"
+  Target_replace: "${header}-$1"
