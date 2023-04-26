@@ -66,11 +66,10 @@ func (a *SiteProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
         log.Printf("Plugin multiplexer-proxy called")
 	destTemplate := a.pattern1.ReplaceAllString(a.config.TargetReplace,url.QueryEscape(req.Header.Get(a.config.Header)))
-        originalDestination := fmt.Sprintf("https://%s/%s",req.Host,req.URL.String())
-	destination := a.pattern2.ReplaceAllString(originalDestination, destTemplate)
+	destination := a.pattern2.ReplaceAllString(req.URL.String(), destTemplate)
 	destinationUrl, err := url.Parse(destination)
 
-        log.Printf("multiplexer-proxy: '%s' , '%s' -> '%s' = '%s'",destTemplate,originalDestination,destination,destinationUrl.String())
+        log.Printf("multiplexer-proxy: '%s' '%s', '%s' = '%s'",destTemplate,req.URL.String(),destination,destinationUrl.String())
 	if err != nil {
 		a.next.ServeHTTP(rw, req)
 		return
@@ -80,7 +79,6 @@ func (a *SiteProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		proxy = httputil.NewSingleHostReverseProxy(destinationUrl)
                 a.proxyCache.Add(destinationUrl.String(),proxy,cache.DefaultExpiration)
 	}
-	req.Host = "" //Need to reset the host, for the reverseProxy to work correctly:
 	proxy.(*httputil.ReverseProxy).ServeHTTP(rw, req)
 
 	a.next.ServeHTTP(rw, req)
